@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f7f8fc">
+<meta name="description" content="LinguaRead - 외국어를 읽고 직접 번역하며 배우는 학습 웹앱">
+<title>LinguaRead</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#f7f8fc;color:#20232a}
+button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;background:#20232a;color:white}
+button.secondary{background:#eef0f5;color:#20232a}textarea{width:100%;min-height:130px;border:1px solid #ddd;border-radius:14px;padding:15px;font-size:16px;resize:vertical}
+.app{max-width:900px;margin:auto;min-height:100vh}.top{padding:28px 22px 10px}.brand{font-size:28px;font-weight:800}.sub{color:#777;margin-top:7px}
+nav{display:flex;gap:8px;padding:14px 22px;position:sticky;top:0;background:#f7f8fc;z-index:2}nav button{flex:1;background:white;color:#555;border:1px solid #e5e7eb}nav button.active{background:#20232a;color:white}
+main{padding:10px 22px 40px}.hero{background:white;border-radius:22px;padding:25px;margin:10px 0 18px;border:1px solid #eee}
+h1,h2,h3{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{background:white;border:1px solid #eee;border-radius:18px;padding:18px}.tag{display:inline-block;background:#eef0f5;border-radius:20px;padding:6px 10px;font-size:12px;margin-bottom:10px}
+.sentence{display:block;width:100%;text-align:left;background:white;color:#222;border:0;border-bottom:1px solid #eee;border-radius:0;padding:14px 4px;font-weight:400;font-size:17px}.sentence:hover,.sentence.selected{background:#f1f3f8}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.feedback{margin-top:18px;background:#f7f8fc;border-radius:16px;padding:18px}.score{font-size:30px;font-weight:800}.muted{color:#777}.word{font-size:24px;font-weight:800}.empty{text-align:center;padding:50px 10px;color:#777}
+@media(max-width:600px){.top{padding:22px 16px 8px}nav,main{padding-left:16px;padding-right:16px}.hero{padding:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="brand">LinguaRead</div><div class="sub">읽고 · 번역하고 · 배우는 외국어 독서</div></header>
+<nav id="nav"></nav>
+<main id="app"></main>
+</div>
+<script>
+const texts=[
+{id:1,lang:"독일어",title:"Ein ruhiger Abend",sentences:[
+"Am Abend sitze ich gern am Fenster und lese ein Buch.",
+"Das Zimmer ist ruhig, und draußen regnet es leise.",
+"Beim Lesen vergesse ich für einen Moment die Zeit.",
+"Manchmal finde ich einen neuen Ausdruck, den ich noch nicht kenne.",
+"Ich schreibe ihn auf und versuche, seine Bedeutung aus dem Kontext zu verstehen."
+]},
+{id:2,lang:"독일어",title:"Eine Reise beginnt",sentences:[
+"Eine Reise beginnt oft mit einem kleinen Plan.",
+"Ich möchte neue Orte sehen und Menschen aus verschiedenen Ländern treffen.",
+"Besonders interessant finde ich die Sprache eines neuen Landes.",
+"Wenn ich eine neue Sprache lerne, entdecke ich eine andere Art zu denken.",
+"Deshalb nehme ich auf jeder Reise ein kleines Wörterbuch mit."
+]},
+{id:3,lang:"영어",title:"Reading Every Day",sentences:[
+"I like reading a book before I go to sleep.",
+"A quiet story helps me forget about the busy day.",
+"When I find a new expression, I write it in my notebook.",
+"Sometimes the meaning of a word becomes clear from the whole sentence.",
+"Reading in another language takes time, but it also teaches me to think differently."
+]},
+{id:4,lang:"영어",title:"Learning Through Books",sentences:[
+"Books can introduce us to people and places we have never seen.",
+"Reading a story in another language can feel difficult at first.",
+"However, each difficult sentence is an opportunity to learn.",
+"I try to understand the writer's intention instead of translating every word.",
+"That habit helps me become a better language learner."
+]}
+];
+
+let state={page:"home",text:null,sentence:null,words:JSON.parse(localStorage.getItem("lr_words")||"[]"),history:JSON.parse(localStorage.getItem("lr_history")||"[]")};
+
+const navItems=[["home","홈"],["read","독서"],["translate","번역"],["words","단어장"]];
+function renderNav(){document.getElementById("nav").innerHTML=navItems.map(([id,label])=>`<button class="${state.page===id?'active':''}" onclick="go('${id}')">${label}</button>`).join("")}
+function go(page){state.page=page;render()}
+function render(){
+ renderNav(); const root=document.getElementById("app");
+ if(state.page==="home") root.innerHTML=home();
+ if(state.page==="read") root.innerHTML=read();
+ if(state.page==="translate") root.innerHTML=translate();
+ if(state.page==="words") root.innerHTML=words();
+}
+function home(){return `<section class="hero"><span class="tag">번역 학습 앱</span><h1>읽고, 직접 번역하고,<br>AI처럼 피드백받으세요.</h1><p class="muted">외국어 원문을 읽고 스스로 번역하는 과정을 통해 번역 감각을 키워보세요.</p><div class="actions"><button onclick="go('read')">독서 시작하기</button><button class="secondary" onclick="go('translate')">번역 연습</button></div></section>
+<div class="grid"><div class="card"><h3>📖 외국어 독서</h3><p class="muted">영어와 독일어로 직접 만든 짧은 글을 읽어보세요.</p></div><div class="card"><h3>✍️ 번역가 모드</h3><p class="muted">정답을 보기 전에 먼저 자신의 번역을 작성합니다.</p></div><div class="card"><h3>📚 내 단어장</h3><p class="muted">${state.words.length}개의 단어가 저장되어 있습니다.</p></div></div>`}
+function read(){if(!state.text)return `<h2>읽을 글 선택</h2><div class="grid">${texts.map(t=>`<div class="card"><span class="tag">${t.lang}</span><h3>${t.title}</h3><p class="muted">${t.sentences.length}문장</p><button onclick="openText(${t.id})">읽기</button></div>`).join("")}</div>`;
+return `<div class="hero"><span class="tag">${state.text.lang}</span><h2>${state.text.title}</h2>${state.text.sentences.map((s,i)=>`<button class="sentence ${state.sentence===i?'selected':''}" onclick="selectSentence(${i})">${i+1}. ${s}</button>`).join("")}
+${state.sentence!==null?`<div class="feedback"><div class="word">${state.text.sentences[state.sentence]}</div><p><b>문장 도움말</b></p><p class="muted">이 문장을 먼저 스스로 해석해 본 뒤 번역 연습으로 넘어가 보세요. 모르는 표현은 아래에서 저장할 수 있습니다.</p><div class="actions"><button onclick="saveSampleWord()">핵심 단어 저장</button><button class="secondary" onclick="startTranslation()">이 문장 번역하기</button></div></div>`:""}</div>`}
+function openText(id){state.text=texts.find(t=>t.id===id);state.sentence=null;render()}
+function selectSentence(i){state.sentence=i;render()}
+function saveSampleWord(){let s=state.text.sentences[state.sentence];let w=s.includes("Buch")?["Buch","책"]:s.includes("Sprache")?["Sprache","언어"]:s.includes("Reise")?["Reise","여행"]:s.includes("lesen")?["lesen","읽다"]:["expression","표현"];if(!state.words.some(x=>x.word===w[0]))state.words.push({word:w[0],meaning:w[1],sentence:s,lang:state.text.lang});localStorage.setItem("lr_words",JSON.stringify(state.words));render()}
+function startTranslation(){state.page="translate";state.sentence=state.sentence??0;render()}
+function currentPractice(){let t=state.text||texts[0];let i=state.sentence??0;return {t,i,s:t.sentences[i]}}
+function translate(){let p=currentPractice();let last=state.history[0];return `<div class="hero"><span class="tag">번역가 모드 · ${p.t.lang}</span><h2>먼저 직접 번역해보세요</h2><p style="font-size:20px;line-height:1.6">${p.s}</p><textarea id="userTrans" placeholder="이 문장을 한국어로 번역해 보세요."></textarea><div class="actions"><button onclick="feedback()">번역 제출</button></div>${last?`<div class="feedback"><h3>최근 피드백</h3><div class="score">${last.score}/100</div><p><b>잘한 점</b><br>${last.good}</p><p><b>개선할 점</b><br>${last.improve}</p><p><b>추천 번역</b><br>${last.answer}</p></div>`:""}</div>`}
+function feedback(){let val=document.getElementById("userTrans").value.trim();if(!val){alert("먼저 번역을 입력해 주세요.");return}let s=currentPractice().s;let lang=currentPractice().t.lang;let answer=lang==="독일어"&&s.includes("Buch")?"나는 저녁마다 책을 읽는 것을 좋아합니다.":lang==="영어"&&s.includes("book")?"나는 잠들기 전에 책을 읽는 것을 좋아합니다.":"문맥에 맞게 자연스럽게 의미를 전달하는 것이 중요합니다.";let score=Math.min(95,65+Math.min(30,Math.round(val.length/2)));let good=val.length>8?"문장의 핵심 내용을 자신의 표현으로 옮기려고 한 점이 좋습니다.":"짧게 핵심을 잡으려 한 점이 좋습니다.";let improve="단어를 하나씩 직역하기보다 문장 전체의 의미와 자연스러운 한국어 표현을 함께 생각해 보세요.";state.history.unshift({score,good,improve,answer,original:s,user:val});state.history=state.history.slice(0,5);localStorage.setItem("lr_history",JSON.stringify(state.history));render()}
+function words(){if(!state.words.length)return `<div class="empty"><h2>아직 저장한 단어가 없어요.</h2><p>독서 화면에서 중요한 단어를 저장해 보세요.</p><button onclick="go('read')">독서하러 가기</button></div>`;return `<h2>내 단어장</h2><div class="grid">${state.words.map((w,i)=>`<div class="card"><span class="tag">${w.lang}</span><div class="word">${w.word}</div><p>${w.meaning}</p><p class="muted">${w.sentence}</p><button class="secondary" onclick="removeWord(${i})">삭제</button></div>`).join("")}</div>`}
+function removeWord(i){state.words.splice(i,1);localStorage.setItem("lr_words",JSON.stringify(state.words));render()}
+render();
+</script>
+</body>
+</html>
